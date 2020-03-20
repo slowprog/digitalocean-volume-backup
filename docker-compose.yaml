@@ -9,9 +9,9 @@ services:
         stdin_open: true
         tty: true
         environment: 
-            ACCESS_TOKEN: 8c97cbda79c6671fa2164b1650529c44c3227c215fb6b2b8321f51db7917c77e
+            ACCESS_TOKEN: $DIGITALOCEAN_ACCESS_TOKEN
             VOLUMES_BACKUP: 
             SNAPSHOTS_PREFIX: backup
-            SNAPSHOTS_MAX: 5
+            SNAPSHOTS_MAX: 20
         volumes:
             - ./:/app
