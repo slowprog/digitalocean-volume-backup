@@ -43,6 +43,51 @@ func main() {
 	currentDate := time.Now()
 
 	for _, vol := range volumes {
+		snapshots, response, err := client.Storage.ListSnapshots(ctx, vol.ID, &godo.ListOptions{
+			PerPage: 25,
+		})
+
+		if err != nil {
+			log.WithFields(log.Fields{
+				"message":    err,
+				"rate_limit": response,
+			}).Error("Something bad happened with ListSnapshots")
+
+			continue
+		}
+
+		snapshots = filterSnapshotsByPrefix(snapshots, conf.SnapshotsPrefix)
+
+		snapshotsLimit := conf.SnapshotsMax - 1
+
+		if len(snapshots) > snapshotsLimit {
+			sort.Slice(snapshots, func(i, j int) bool {
+				date1, _ := time.Parse(time.RFC3339, snapshots[i].Created)
+				date2, _ := time.Parse(time.RFC3339, snapshots[j].Created)
+
+				return date1.Before(date2)
+			})
+
+			snapshots = snapshots[:len(snapshots)-snapshotsLimit]
+
+			log.WithFields(log.Fields{
+				"snapshots_names": getSpapchotsNames(snapshots),
+			}).Info("Removing old snapshots")
+
+			for _, snapshot := range snapshots {
+				response, err := client.Storage.DeleteSnapshot(ctx, snapshot.ID)
+
+				if err != nil {
+					log.WithFields(log.Fields{
+						"message":    err,
+						"rate_limit": response,
+					}).Error("Something bad happened with DeleteSnapshot")
+
+					continue
+				}
+			}
+		}
+
 		snapshotName := fmt.Sprintf("%s-%s-%s", conf.SnapshotsPrefix, vol.Name, currentDate.Format("2006.01.02.15.04.05"))
 
 		log.WithFields(log.Fields{
@@ -71,47 +116,6 @@ func main() {
 			"snapshot_id":   snapshot.ID,
 			"snapshot_name": snapshot.Name,
 		}).Info("Snapshot has been created")
-
-		snapshots, response, err := client.Storage.ListSnapshots(ctx, vol.ID, &godo.ListOptions{})
-
-		if err != nil {
-			log.WithFields(log.Fields{
-				"message":    err,
-				"rate_limit": response,
-			}).Error("Something bad happened with ListSnapshots")
-
-			continue
-		}
-
-		snapshots = filterSnapshotsByPrefix(snapshots, conf.SnapshotsPrefix)
-
-		if len(snapshots) > conf.SnapshotsMax {
-			sort.Slice(snapshots, func(i, j int) bool {
-				date1, _ := time.Parse(time.RFC3339, snapshots[i].Created)
-				date2, _ := time.Parse(time.RFC3339, snapshots[j].Created)
-
-				return date1.Before(date2)
-			})
-
-			snapshots = snapshots[:len(snapshots)-conf.SnapshotsMax]
-
-			log.WithFields(log.Fields{
-				"snapshots_names": getSpapchotsNames(snapshots),
-			}).Info("Removing old snapshots")
-
-			for _, snapshot := range snapshots {
-				response, err := client.Storage.DeleteSnapshot(ctx, snapshot.ID)
-
-				if err != nil {
-					log.WithFields(log.Fields{
-						"message":    err,
-						"rate_limit": response,
-					}).Error("Something bad happened with DeleteSnapshot")
-
-					continue
-				}
-			}
-		}
 	}
 
 	log.Info("Volumes backup is over")

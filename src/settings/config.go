@@ -16,11 +16,17 @@ type Config struct {
 
 // NewConfig returns a new Config struct
 func NewConfig() *Config {
+	snapshotsMax := getEnvAsInt("SNAPSHOTS_MAX", 5)
+
+	if snapshotsMax > 25 {
+		snapshotsMax = 25
+	}
+
 	return &Config{
 		AccessToken:     getEnv("ACCESS_TOKEN", ""),
 		SnapshotsPrefix: getEnv("SNAPSHOTS_PREFIX", "backup"),
 		VolumesBackup:   getEnvAsSlice("VOLUMES_BACKUP", []string{}, ","),
-		SnapshotsMax:    getEnvAsInt("SNAPSHOTS_MAX", 5),
+		SnapshotsMax:    snapshotsMax,
 	}
 }
 
