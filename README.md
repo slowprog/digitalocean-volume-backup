@@ -2,7 +2,7 @@
 
 A small container (with GO-script) for automatic backup of DigitalOcean volumes using the [Block Storage API](https://developers.digitalocean.com/documentation/v2/#block-storage).
 
-At each launch, the script creates a snapshot of the volumes and the extra ones are deleted. But you can’t run the script more than once every 10 minutes because you can create a snapshot for volum only once every 10 minutes. This is an API limit.
+At each launch, the script creates a snapshot of the volumes and the extra ones are deleted. But you can’t run the script more than once every 10 minutes because you can create a snapshot for volum only once every 10 minutes. This is an API limit. And remember that by default you cannot create more than 25 snapshots per volume.
 
 The following environment variables can be used to configure:
 
